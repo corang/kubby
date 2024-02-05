@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: kubby-cloudserver
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kubby-cloudserver
+  serviceName: kubby-cloudserver
+  template:
+    metadata:
+      labels:
+        app: kubby-cloudserver
+    spec:
+      containers:
+        - name: cloudserver
+          image: ghcr.io/corang/cloudserver:8.8.15
+          ports:
+            - containerPort: 8000
+              protocol: TCP
+              name: s3
+          volumeMounts:
+            - name: app-data
+              mountPath: /usr/src/app/localData
+            - name: app-metadata
+              mountPath: /usr/src/app/localMetadata
+          env:
+            - name: S3DATA
+              value: "file"
+            - name: S3BACKEND
+              value: "file"
+            - name: REMOTE_MANAGEMENT_DISABLE
+              value: "1"
+  volumeClaimTemplates:
+    - metadata:
+        name: app-data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi
+    - metadata:
+        name: app-metadata
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi
