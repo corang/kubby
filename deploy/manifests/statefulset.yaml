@@ -30,8 +30,20 @@ spec:
               value: "file"
             - name: S3BACKEND
               value: "file"
+            - name: S3METADATA
+              value: "file"
             - name: REMOTE_MANAGEMENT_DISABLE
               value: "1"
+            - name: SCALITY_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  key: accessKey
+                  name: kubby-cloudserver
+            - name: SCALITY_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  key: secretKey
+                  name: kubby-cloudserver
   volumeClaimTemplates:
     - metadata:
         name: app-data
