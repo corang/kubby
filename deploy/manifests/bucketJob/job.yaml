@@ -1,0 +1,30 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kubby-create-bucket
+spec:
+  template:
+    spec:
+      containers:
+        - name: kubby-create-bucket
+          image: amazon/aws-cli:latest
+          args:
+            - "--endpoint-url=http://kubby-cloudserver"
+            - "s3"
+            - "mb"
+            - "s3://jobbucket"
+          volumeMounts:
+            - name: config
+              mountPath: /root/.aws/config
+              subPath: config
+            - name: secret
+              mountPath: /root/.aws/credentials
+              subPath: credentials
+      volumes:
+        - name: config
+          configMap:
+            name: kubby-create-bucket-config
+        - name: secret
+          secret:
+            secretName: kubby-create-bucket-secret
+      restartPolicy: Never

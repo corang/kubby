@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kubby-create-bucket-config
+data:
+  config: |
+    [default]
+    region = us-east-1
+
