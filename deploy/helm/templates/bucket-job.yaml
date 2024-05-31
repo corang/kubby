@@ -1,18 +1,31 @@
+{{- range $bucket := .Values.buckets }}
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: kubby-create-bucket
+  name: kubby-create-{{ $bucket }}
+  labels:
+    {{- include "kubby.labels" $ | nindent 4 }}
 spec:
   template:
+    metadata:
+      {{- with $.Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "kubby.labels" $ | nindent 8 }}
+        {{- with $.Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
     spec:
       containers:
         - name: kubby-create-bucket
           image: amazon/aws-cli:latest
           args:
-            - "--endpoint-url=http://kubby:8000"
+            - "--endpoint-url=http://{{ include "kubby.fullname" $ }}:{{ $.Values.service.port }}"
             - "s3"
             - "mb"
-            - "s3://jobbucket"
+            - "s3://{{ $bucket }}"
           env:
             - name: AWS_ACCESS_KEY_ID
               valueFrom:
@@ -27,3 +40,5 @@ spec:
             - name: AWS_DEFAULT_REGION
               value: "us-east-1"
       restartPolicy: Never
+---
+{{- end }}

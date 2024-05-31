@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kubby-cloudserver-data
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: kubby-cloudserver-data
+  template:
+    metadata:
+      labels:
+        app: kubby-cloudserver-data
+    spec:
+      containers:
+        - name: cloudserver
+          image: ghcr.io/corang/cloudserver:8.8.25
+          args:
+            - "yarn"
+            - "start_dataserver"
+          ports:
+            - containerPort: 9991
+              protocol: TCP
+              name: data
+          resources:
+            limits:
+              cpu: "1"
+              memory: "1Gi"
+          volumeMounts:
+            - name: app-data
+              mountPath: /usr/src/app/localData
+            - name: config
+              mountPath: /usr/src/app/config.json
+              subPath: config.json
+            - name: config
+              mountPath: /usr/src/app/locationConfig.json
+              subPath: locationConfig.json
+          env:
+            - name: S3DATA
+              value: "file"
+            - name: S3BACKEND
+              value: "file"
+            - name: S3METADATA
+              value: "mongodb"
+            - name: REMOTE_MANAGEMENT_DISABLE
+              value: "1"
+            - name: SCALITY_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  key: accessKey
+                  name: kubby-cloudserver
+            - name: SCALITY_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  key: secretKey
+                  name: kubby-cloudserver
+      volumes:
+        - name: config
+          configMap:
+            name: kubby-cloudserver-config
+        - name: app-data
+          persistentVolumeClaim:
+            claimName: app-data

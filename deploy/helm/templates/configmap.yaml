@@ -1,0 +1,111 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kubby-cloudserver-config
+data:
+  config.json: |
+    {
+        "port": {{ .Values.service.port }},
+        "listenOn": [],
+        "metricsPort": 8002,
+        "metricsListenOn": [],
+        "replicationGroupId": "RG001",
+        "restEndpoints": {
+            "localhost": "us-east-1",
+            "127.0.0.1": "us-east-1",
+            "{{ include "kubby.fullname" . }}": "us-east-1",
+            "{{ include "kubby.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local": "us-east-1"
+        },
+        "websiteEndpoints": [],
+        "replicationEndpoints": [{
+            "site": "zenko",
+            "servers": ["127.0.0.1:8000"],
+            "default": true
+        }],
+        "backbeat": {
+            "host": "localhost",
+            "port": 8900
+        },
+        "workflowEngineOperator": {
+            "host": "localhost",
+            "port": 3001
+        },
+        "cdmi": {
+            "host": "localhost",
+            "port": 81,
+            "path": "/dewpoint",
+            "readonly": true
+        },
+        "bucketd": {
+            "bootstrap": ["localhost:9000"]
+        },
+        "vaultd": {
+            "host": "localhost",
+            "port": 8500
+        },
+        "clusters": 1,
+        "log": {
+            "logLevel": "info",
+            "dumpLevel": "error"
+        },
+        "healthChecks": {
+            "allowFrom": ["0.0.0.0/0"]
+        },
+        "metadataClient": {
+            "host": "localhost",
+            "port": 9990
+        },
+        "dataClient": {
+            "host": "localhost",
+            "port": 9991
+        },
+        "pfsClient": {
+            "host": "localhost",
+            "port": 9992
+        },
+        "metadataDaemon": {
+            "bindAddress": "localhost",
+            "port": 9990
+        },
+        "dataDaemon": {
+            "bindAddress": "localhost",
+            "port": 9991
+        },
+        "pfsDaemon": {
+            "bindAddress": "localhost",
+            "port": 9992
+        },
+        "recordLog": {
+            "enabled": true,
+            "recordLogName": "s3-recordlog"
+        },
+        "mongodb": {
+            "replicaSetHosts": "localhost:27018,localhost:27019,localhost:27020",
+            "writeConcern": "majority",
+            "replicaSet": "rs0",
+            "readPreference": "primary",
+            "database": "metadata"
+        },
+        "externalBackends": {},
+        "requests": {
+            "viaProxy": false,
+            "trustedProxyCIDRs": [],
+            "extractClientIPFromHeader": ""
+        },
+        "bucketNotificationDestinations": [
+            {
+                "resource": "target1",
+                "type": "dummy",
+                "host": "localhost:6000"
+            }
+        ]
+    }
+  locationConfig.json: |
+    {
+        "us-east-1": {
+            "type": "file",
+            "objectId": "us-east-1",
+            "legacyAwsBehavior": true,
+            "details": {}
+        }
+    }

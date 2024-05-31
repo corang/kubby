@@ -1,30 +1,32 @@
 apiVersion: apps/v1
-kind: StatefulSet
+kind: Deployment
 metadata:
-  name: kubby-cloudserver
+  name: kubby-cloudserver-s3
 spec:
-  replicas: 1
+  replicas: 3
   selector:
     matchLabels:
-      app: kubby-cloudserver
-  serviceName: kubby-cloudserver
+      app: kubby-cloudserver-s3
   template:
     metadata:
       labels:
-        app: kubby-cloudserver
+        app: kubby-cloudserver-s3
     spec:
       containers:
         - name: cloudserver
-          image: ghcr.io/corang/cloudserver:8.8.17
+          image: ghcr.io/corang/cloudserver:8.8.25
+          args:
+            - "yarn"
+            - "start_s3server"
           ports:
             - containerPort: 8000
               protocol: TCP
               name: s3
+          resources:
+            limits:
+              cpu: "1"
+              memory: "1Gi"
           volumeMounts:
-            - name: app-data
-              mountPath: /usr/src/app/localData
-            - name: app-metadata
-              mountPath: /usr/src/app/localMetadata
             - name: config
               mountPath: /usr/src/app/config.json
               subPath: config.json
@@ -32,12 +34,19 @@ spec:
               mountPath: /usr/src/app/locationConfig.json
               subPath: locationConfig.json
           env:
+            - name: MONGODB_AUTH_USERNAME
+              value: "root"
+            - name: MONGODB_AUTH_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: mongodb-root-password
+                  name: mongo-mongodb
             - name: S3DATA
               value: "file"
             - name: S3BACKEND
               value: "file"
             - name: S3METADATA
-              value: "file"
+              value: "mongodb"
             - name: REMOTE_MANAGEMENT_DISABLE
               value: "1"
             - name: SCALITY_ACCESS_KEY_ID
@@ -54,20 +63,3 @@ spec:
         - name: config
           configMap:
             name: kubby-cloudserver-config
-  volumeClaimTemplates:
-    - metadata:
-        name: app-data
-      spec:
-        accessModes:
-          - ReadWriteOnce
-        resources:
-          requests:
-            storage: 1Gi
-    - metadata:
-        name: app-metadata
-      spec:
-        accessModes:
-          - ReadWriteOnce
-        resources:
-          requests:
-            storage: 1Gi

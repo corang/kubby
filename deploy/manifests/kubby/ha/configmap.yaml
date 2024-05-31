@@ -52,11 +52,11 @@ data:
             "allowFrom": ["127.0.0.1/8", "::1"]
         },
         "metadataClient": {
-            "host": "localhost",
+            "host": "metadata",
             "port": 9990
         },
         "dataClient": {
-            "host": "localhost",
+            "host": "data",
             "port": 9991
         },
         "pfsClient": {
@@ -64,11 +64,11 @@ data:
             "port": 9992
         },
         "metadataDaemon": {
-            "bindAddress": "localhost",
+            "bindAddress": "::",
             "port": 9990
         },
         "dataDaemon": {
-            "bindAddress": "localhost",
+            "bindAddress": "::",
             "port": 9991
         },
         "pfsDaemon": {
@@ -80,7 +80,7 @@ data:
             "recordLogName": "s3-recordlog"
         },
         "mongodb": {
-            "replicaSetHosts": "localhost:27018,localhost:27019,localhost:27020",
+            "replicaSetHosts": "mongo-mongodb-0.mongo-mongodb-headless:27017,mongo-mongodb-1.mongo-mongodb-headless:27017,mongo-mongodb-2.mongo-mongodb-headless:27017",
             "writeConcern": "majority",
             "replicaSet": "rs0",
             "readPreference": "primary",
@@ -109,4 +109,3 @@ data:
             "details": {}
         }
     }
-
