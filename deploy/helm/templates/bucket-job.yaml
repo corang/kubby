@@ -22,7 +22,12 @@ spec:
         - name: kubby-create-bucket
           image: amazon/aws-cli:latest
           args:
+            - "--debug"
+            {{ if $.Values.ha.enabled -}}
+            - "--endpoint-url=http://{{ include "kubby.fullname" $ }}-cloudserver-frontend:{{ $.Values.ha.frontend.service.port }}"
+            {{- else -}}
             - "--endpoint-url=http://{{ include "kubby.fullname" $ }}:{{ $.Values.service.port }}"
+            {{- end }}
             - "s3"
             - "mb"
             - "s3://{{ $bucket }}"

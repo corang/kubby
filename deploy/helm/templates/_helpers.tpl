@@ -51,6 +51,46 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*
+Frontend labels
+*/}}
+{{- define "kubby.labels-frontend" -}}
+helm.sh/chart: {{ include "kubby.chart" . }}
+{{ include "kubby.selectorLabels-frontend" . }}
+{{- if .Chart.AppVersion }}
+app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+{{- end }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+{{- end }}
+
+{{/*
+Selector labels
+*/}}
+{{- define "kubby.selectorLabels-frontend" -}}
+app.kubernetes.io/name: {{ include "kubby.name" . }}-frontend
+app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}
+
+{{/*
+Data labels
+*/}}
+{{- define "kubby.labels-data" -}}
+helm.sh/chart: {{ include "kubby.chart" . }}
+{{ include "kubby.selectorLabels-data" . }}
+{{- if .Chart.AppVersion }}
+app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+{{- end }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+{{- end }}
+
+{{/*
+Selector labels
+*/}}
+{{- define "kubby.selectorLabels-data" -}}
+app.kubernetes.io/name: {{ include "kubby.name" . }}-data
+app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}
+
+{{/*
 Create the name of the service account to use
 */}}
 {{- define "kubby.serviceAccountName" -}}

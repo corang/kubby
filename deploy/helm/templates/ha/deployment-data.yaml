@@ -1,26 +1,26 @@
+{{ if .Values.ha.enabled -}}
 apiVersion: apps/v1
-kind: StatefulSet
+kind: Deployment
 metadata:
-  name: {{ include "kubby.fullname" . }}
+  name: {{ include "kubby.fullname" . }}-cloudserver-data
   labels:
-    {{- include "kubby.labels" . | nindent 4 }}
+    {{- include "kubby.labels-data" . | nindent 4 }}
 spec:
-  {{- if not .Values.autoscaling.enabled }}
-  replicas: 1
+  {{- if not .Values.ha.data.autoscaling.enabled }}
+  replicas: {{ .Values.ha.replicaCount }}
   {{- end }}
   selector:
     matchLabels:
-      {{- include "kubby.selectorLabels" . | nindent 6 }}
-  serviceName: {{ include "kubby.fullname" . }}
+      {{- include "kubby.selectorLabels-data" . | nindent 6 }}
   template:
     metadata:
-      {{- with .Values.podAnnotations }}
+      {{- with .Values.ha.data.podAnnotations }}
       annotations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        {{- include "kubby.labels" . | nindent 8 }}
-        {{- with .Values.podLabels }}
+        {{- include "kubby.labels-data" . | nindent 8 }}
+        {{- with .Values.ha.data.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
     spec:
@@ -30,42 +30,36 @@ spec:
       {{- end }}
       serviceAccountName: {{ include "kubby.serviceAccountName" . }}
       securityContext:
-        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+        {{- toYaml .Values.ha.data.podSecurityContext | nindent 8 }}
       containers:
-        - name: {{ .Chart.Name }}
+        - name: cloudserver-data
           securityContext:
-            {{- toYaml .Values.securityContext | nindent 12 }}
+            {{- toYaml .Values.ha.data.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - "yarn"
+            - "start_dataserver"
           ports:
-            - name: s3
-              containerPort: {{ .Values.service.port }}
+            - containerPort: 9991
               protocol: TCP
-            - name: metrics
-              containerPort: 8002
-              protocol: TCP
+              name: data
           livenessProbe:
-            httpGet:
-              path: /live
-              port: metrics
+            {{- toYaml .Values.ha.data.livenessProbe | nindent 12 }}
           readinessProbe:
-            httpGet:
-              path: /live
-              port: metrics
+            {{- toYaml .Values.ha.data.readinessProbe | nindent 12 }}
           resources:
-            {{- toYaml .Values.resources | nindent 12 }}
+            {{- toYaml .Values.ha.data.resources | nindent 12 }}
           volumeMounts:
             - name: app-data
               mountPath: /usr/src/app/localData
-            - name: app-metadata
-              mountPath: /usr/src/app/localMetadata
             - name: config
               mountPath: /usr/src/app/config.json
               subPath: config.json
             - name: config
               mountPath: /usr/src/app/locationConfig.json
               subPath: locationConfig.json
-            {{- with .Values.volumeMounts }}
+            {{- with .Values.ha.data.volumeMounts }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
           env:
@@ -74,7 +68,7 @@ spec:
             - name: S3BACKEND
               value: "file"
             - name: S3METADATA
-              value: "file"
+              value: "mongodb"
             - name: REMOTE_MANAGEMENT_DISABLE
               value: "1"
             - name: SCALITY_ACCESS_KEY_ID
@@ -87,40 +81,26 @@ spec:
                 secretKeyRef:
                   key: secretKey
                   name: kubby-credentials
-      
       volumes:
         - name: config
           configMap:
             name: kubby-cloudserver-config
-        {{- with .Values.volumes }}
+        - name: app-data
+          persistentVolumeClaim:
+            claimName: {{ include "kubby.fullname" . -}}-cloudserver-data
+        {{- with .Values.ha.data.volumes }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
-      {{- with .Values.nodeSelector }}
+      {{- with .Values.ha.data.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.affinity }}
+      {{- with .Values.ha.data.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.tolerations }}
+      {{- with .Values.ha.data.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-  volumeClaimTemplates:
-    - metadata:
-        name: app-data
-      spec:
-        accessModes:
-          - ReadWriteOnce
-        resources:
-          requests:
-            storage: 1Gi
-    - metadata:
-        name: app-metadata
-      spec:
-        accessModes:
-          - ReadWriteOnce
-        resources:
-          requests:
-            storage: 1Gi
+{{- end }}
