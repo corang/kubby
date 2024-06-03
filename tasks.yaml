@@ -1,0 +1,9 @@
+includes:
+  - setup: https://raw.githubusercontent.com/defenseunicorns/uds-common/v0.4.5/tasks/setup.yaml
+
+tasks:
+  - name: setup-cluster
+    description: Setup a K3D cluster with UDS-Core-Slim
+    actions:
+      - task: setup:k3d-test-cluster
+      - cmd: helm uninstall minio -n uds-dev-stack --wait

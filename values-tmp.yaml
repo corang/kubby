@@ -1,0 +1,13 @@
+highAvailability:
+  enabled: false
+  frontend:
+    replicas: 3
+    pod...
+  data:
+    replicas: 3
+    storageClass: "standard"
+    ...
+  metadata:
+    type: "mongo" | "file"
+    file:
+    mongo:

@@ -1,0 +1,106 @@
+{{ if .Values.ha.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "kubby.fullname" . }}-cloudserver-data
+  labels:
+    {{- include "kubby.labels-data" . | nindent 4 }}
+spec:
+  {{- if not .Values.ha.data.autoscaling.enabled }}
+  replicas: {{ .Values.ha.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "kubby.selectorLabels-data" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.ha.data.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "kubby.labels-data" . | nindent 8 }}
+        {{- with .Values.ha.data.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "kubby.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.ha.data.podSecurityContext | nindent 8 }}
+      containers:
+        - name: cloudserver-data
+          securityContext:
+            {{- toYaml .Values.ha.data.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - "yarn"
+            - "start_dataserver"
+          ports:
+            - containerPort: 9991
+              protocol: TCP
+              name: data
+          livenessProbe:
+            {{- toYaml .Values.ha.data.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.ha.data.readinessProbe | nindent 12 }}
+          resources:
+            {{- toYaml .Values.ha.data.resources | nindent 12 }}
+          volumeMounts:
+            - name: app-data
+              mountPath: /usr/src/app/localData
+            - name: config
+              mountPath: /usr/src/app/config.json
+              subPath: config.json
+            - name: config
+              mountPath: /usr/src/app/locationConfig.json
+              subPath: locationConfig.json
+            {{- with .Values.ha.data.volumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          env:
+            - name: S3DATA
+              value: "file"
+            - name: S3BACKEND
+              value: "file"
+            - name: S3METADATA
+              value: "mongodb"
+            - name: REMOTE_MANAGEMENT_DISABLE
+              value: "1"
+            - name: SCALITY_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  key: accessKey
+                  name: kubby-credentials
+            - name: SCALITY_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  key: secretKey
+                  name: kubby-credentials
+      volumes:
+        - name: config
+          configMap:
+            name: kubby-cloudserver-config
+        - name: app-data
+          persistentVolumeClaim:
+            claimName: {{ include "kubby.fullname" . -}}-cloudserver-data
+        {{- with .Values.ha.data.volumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.ha.data.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.ha.data.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.ha.data.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

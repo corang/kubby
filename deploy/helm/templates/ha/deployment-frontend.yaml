@@ -1,0 +1,129 @@
+{{ if .Values.ha.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "kubby.fullname" . }}-cloudserver-frontend
+  labels:
+    {{- include "kubby.labels-frontend" . | nindent 4 }}
+spec:
+  {{- if not .Values.ha.frontend.autoscaling.enabled }}
+  replicas: {{ .Values.ha.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "kubby.selectorLabels-frontend" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.ha.frontend.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "kubby.labels-frontend" . | nindent 8 }}
+        {{- with .Values.ha.frontend.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "kubby.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.ha.frontend.podSecurityContext | nindent 8 }}
+      containers:
+        - name: cloudserver-frontend
+          securityContext:
+            {{- toYaml .Values.ha.frontend.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - "yarn"
+            - "start_s3server"
+          ports:
+            - name: s3
+              containerPort: 8000
+              protocol: TCP
+            - name: metrics
+              containerPort: 8002
+              protocol: TCP
+          livenessProbe:
+            {{- toYaml .Values.ha.frontend.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.ha.frontend.readinessProbe | nindent 12 }}
+          resources:
+            {{- toYaml .Values.ha.frontend.resources | nindent 12 }}
+          volumeMounts:
+            - name: config
+              mountPath: /usr/src/app/config.json
+              subPath: config.json
+            - name: config
+              mountPath: /usr/src/app/locationConfig.json
+              subPath: locationConfig.json
+            {{- with .Values.ha.frontend.volumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          env:
+            - name: MONGODB_AUTH_USERNAME
+              {{ if .Values.ha.mongodb.internal -}}
+              value: "root"
+              {{- else if .Values.ha.mongodb.external.usernameFromSecret.usernameKey -}}
+              valueFrom:
+                secretKeyRef:
+                  key: {{ .Values.ha.mongodb.external.usernameKey }}
+                  name: {{ .Values.ha.mongodb.external.usernameSecret }}
+              {{- else -}}
+              value: {{ .Values.ha.mongodb.external.username }}
+              {{- end }}
+            - name: MONGODB_AUTH_PASSWORD
+              {{ if .Values.ha.mongodb.internal -}}
+              valueFrom:
+                secretKeyRef:
+                  key: mongodb-root-password
+                  name: kubby-mongodb
+              {{- else if .Values.ha.mongodb.external.passwordFromSecret.passwordKey -}}
+              valueFrom:
+                secretKeyRef:
+                  key: {{ .Values.ha.mongodb.external.passwordKey }}
+                  name: {{ .Values.ha.mongodb.external.passwordSecret }}
+              {{- else -}}
+              value: {{ .Values.ha.mongodb.external.password }}
+              {{- end }}
+            - name: S3DATA
+              value: "file"
+            - name: S3BACKEND
+              value: "file"
+            - name: S3METADATA
+              value: "mongodb"
+            - name: REMOTE_MANAGEMENT_DISABLE
+              value: "1"
+            - name: SCALITY_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  key: accessKey
+                  name: kubby-credentials
+            - name: SCALITY_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  key: secretKey
+                  name: kubby-credentials
+      volumes:
+        - name: config
+          configMap:
+            name: kubby-cloudserver-config
+        {{- with .Values.ha.frontend.volumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.ha.frontend.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.ha.frontend.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.ha.frontend.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

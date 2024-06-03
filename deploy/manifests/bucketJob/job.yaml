@@ -1,0 +1,29 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kubby-create-bucket
+spec:
+  template:
+    spec:
+      containers:
+        - name: kubby-create-bucket
+          image: amazon/aws-cli:latest
+          args:
+            - "--endpoint-url=http://kubby:8000"
+            - "s3"
+            - "mb"
+            - "s3://jobbucket"
+          env:
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: kubby-credentials
+                  key: accessKey
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: kubby-credentials
+                  key: secretKey
+            - name: AWS_DEFAULT_REGION
+              value: "us-east-1"
+      restartPolicy: Never
