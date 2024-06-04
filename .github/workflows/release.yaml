@@ -16,12 +16,13 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Create Pages Release
         uses: helm/chart-releaser-action@v1.6.0
         with:
           charts_dir: deploy
-          skip_existing: false
         env:
           CR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
