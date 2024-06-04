@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
         - name: kubby-create-bucket
-          image: amazon/aws-cli:latest
+          image: docker.io/amazon/aws-cli:latest
           args:
             - "--debug"
             {{ if $.Values.ha.enabled -}}

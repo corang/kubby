@@ -1,0 +1,25 @@
+name: Release chart
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Create Pages Release
+        uses: helm/chart-releaser-action@v1.6.0
+        with:
+          charts_dir: deploy
+
+      - name: Login helm to ghcr
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login -u ${{ github.actor }} --password-stdin ghcr.io
+
+      - name: Package helm chart into tgz
+        run: helm package deploy/helm/
+
+      - name: Push helm chart to ghcr
+        run: helm push ./kubby-*.tgz oci://ghcr.io/corang/kubby-chart
