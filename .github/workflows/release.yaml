@@ -29,17 +29,16 @@ jobs:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
 
       - name: Create Pages Release
+        id: pages
         uses: helm/chart-releaser-action@v1.6.0
         with:
           charts_dir: deploy
         env:
           CR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Login helm to ghcr
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login -u ${{ github.actor }} --password-stdin ghcr.io
-
-      - name: Package helm chart into tgz
-        run: helm package deploy/helm/
-
       - name: Push helm chart to ghcr
-        run: helm push ./kubby-*.tgz oci://ghcr.io/corang/kubby-chart
+        if: ${{ steps.pages.outputs.changed_charts != '' }}
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login -u ${{ github.actor }} --password-stdin ghcr.io
+          helm package deploy/helm/
+          helm push ./kubby-*.tgz oci://ghcr.io/corang/kubby-chart
