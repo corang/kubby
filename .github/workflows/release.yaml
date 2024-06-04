@@ -10,7 +10,7 @@ jobs:
 
     permissions:
       contents: write
-      packages: write
+      packages: read
 
     steps:
       - name: Checkout code
@@ -36,10 +36,3 @@ jobs:
           skip_existing: true
         env:
           CR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Push helm chart to ghcr
-        if: ${{ steps.pages.outputs.changed_charts != '' }}
-        run: |
-          echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login -u ${{ github.actor }} --password-stdin ghcr.io
-          helm package deploy/helm/
-          helm push ./kubby-*.tgz oci://ghcr.io/corang/kubby-chart
