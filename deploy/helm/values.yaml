@@ -8,6 +8,7 @@ imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
 
+# Values for the bitnami mongodb subchart
 mongodb:
   architecture: replicaset
   useStatefulSet: true
@@ -17,10 +18,17 @@ mongodb:
     passwords: [kubby]
     databases: [metadata]
 
+# HA/Scalable architecture for cloudserver
 ha:
-  enabled: true
+  # Toggle between standard and HA
+  enabled: false
 
-  mongodb: 
+  # Replica count for cloudserver frontend and data
+  replicaCount: 3
+
+  # mongodb connection details
+  mongodb:
+    # Toggle between mongodb subchart or specifying external connection details
     internal: true
     external:
       replicaSetHosts: ""
@@ -29,18 +37,21 @@ ha:
       readPreference: "primary"
       database: "metadata2"
 
+      # Can specify username via value or secretRef
+      # if both are specified secretRef takes priority
       username: ""
       usernameFromSecret:
         usernameKey: ""
         usernameSecret: ""
 
+      # Can specify password via value or secretRef
+      # if both are specified secretRef takes priority
       password: ""
       passwordFromSecret:
         passwordKey: ""
         passwordSecret: ""
 
-  replicaCount: 3
-
+  # frontend deployment configuration
   frontend:
     # TODO: Add autoscaling
     autoscaling:
@@ -82,6 +93,7 @@ ha:
 
     affinity: {}
 
+  # data deployment configuration
   data:
     # TODO: Add autoscaling
     autoscaling:
@@ -149,6 +161,10 @@ serviceAccount:
   # The name of the service account to use.
   # If not set and create is true, a name is generated using the fullname template
   name: ""
+
+#########################################################################################################
+# Every value beyond this point is only for the standard deployment, they do not apply if HA is enabled #
+#########################################################################################################
 
 podAnnotations: {}
 podLabels: {}
