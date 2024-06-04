@@ -51,7 +51,7 @@ ha:
         passwordKey: ""
         passwordSecret: ""
 
-  # frontend deployment configuration
+  # cloudserver frontend deployment configuration
   frontend:
     # TODO: Add autoscaling
     autoscaling:
@@ -93,7 +93,7 @@ ha:
 
     affinity: {}
 
-  # data deployment configuration
+  # cloudserver data deployment configuration
   data:
     # TODO: Add autoscaling
     autoscaling:
